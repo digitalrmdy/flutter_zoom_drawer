@@ -2,9 +2,8 @@ library flutter_zoom_drawer;
 
 import 'dart:math' show pi;
 import 'dart:ui' as ui show window;
-
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class ZoomDrawerController {
   /// callback function to open the drawer
@@ -26,7 +25,6 @@ class ZoomDrawerController {
 
 class ZoomDrawer extends StatefulWidget {
   ZoomDrawer({
-    this.type = 'default',
     this.controller,
     @required this.menuScreen,
     @required this.mainScreen,
@@ -38,11 +36,7 @@ class ZoomDrawer extends StatefulWidget {
     this.showShadow = false,
     this.openCurve,
     this.closeCurve,
-    this.duration,
   }) : assert(angle <= 0.0 && angle >= -30.0);
-
-  // Layout style
-  final String type;
 
   /// controller to have access to the open/close/toggle function of the drawer
   final ZoomDrawerController controller;
@@ -76,9 +70,6 @@ class ZoomDrawer extends StatefulWidget {
 
   /// Drawer slide in curve
   final Curve closeCurve;
-
-  /// Drawer Duration
-  final Duration duration;
 
   @override
   _ZoomDrawerState createState() => new _ZoomDrawerState();
@@ -122,8 +113,6 @@ class _ZoomDrawerState extends State<ZoomDrawer>
     _animationController.reverse();
   }
 
-  AnimationController get animationController => _animationController;
-
   /// Toggle drawer
   toggle() {
     if (_state == DrawerState.open) {
@@ -149,10 +138,7 @@ class _ZoomDrawerState extends State<ZoomDrawer>
     /// Initialize the animation controller
     /// add status listener to update the menuStatus
     _animationController = AnimationController(
-        vsync: this,
-        duration: widget.duration is Duration
-            ? widget.duration
-            : Duration(milliseconds: 250))
+        vsync: this, duration: const Duration(milliseconds: 500))
       ..addStatusListener((AnimationStatus status) {
         switch (status) {
           case AnimationStatus.forward:
@@ -235,7 +221,8 @@ class _ZoomDrawerState extends State<ZoomDrawer>
     final slideAmount = (widget.slideWidth - slide) * slidePercent * _rtlSlide;
 
     /// calculated scale amount based on the provided scale and animation value
-    final contentScale = (scale ?? 1.0) - (0.2 * scalePercent);
+    final contentScale =
+        (scale ?? 1.0) - (widget.mainScreenScale * scalePercent);
 
     /// calculated radius based on the provided radius and animation value
     final cornerRadius = widget.borderRadius * _percentOpen;
@@ -277,45 +264,24 @@ class _ZoomDrawerState extends State<ZoomDrawer>
       )
   * */
 
-  Widget renderDefault() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        double slide = rightSlide * _animationController.value;
-        double scale =
-            1 - (_animationController.value * widget.mainScreenScale);
-
-        double left = (1 - _animationController.value) * rightSlide;
-
-        return Stack(
-          children: [
-            Scaffold(
-              backgroundColor: Colors.blueAccent,
-              body: Transform.translate(
-                offset: Offset(0, 0),
-                child: widget.menuScreen,
-              ),
-            ),
-            Transform(
-              transform: Matrix4.identity()
-                ..translate(slide)
-                ..scale(scale),
-              alignment: Alignment.center,
-              child: widget.mainScreen,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderStyle1() {
+  @override
+  Widget build(BuildContext context) {
     final slidePercent =
         ZoomDrawer.isRTL() ? MediaQuery.of(context).size.width * .1 : 15.0;
+
     return Stack(
       children: [
-        widget.menuScreen,
+        GestureDetector(
+          child: widget.menuScreen,
+
+          /// Detecting the slide amount to close the drawer in RTL & LTR
+          onPanUpdate: (details) {
+            if (details.delta.dx < -6 && !_rtl ||
+                details.delta.dx < 6 && _rtl) {
+              toggle();
+            }
+          },
+        ),
         if (widget.showShadow) ...[
           /// Displaying the first shadow
           AnimatedBuilder(
@@ -346,240 +312,9 @@ class _ZoomDrawerState extends State<ZoomDrawer>
         AnimatedBuilder(
           animation: _animationController,
           builder: (_, w) => _zoomAndSlideContent(w),
-          child: GestureDetector(
-            child: widget.mainScreen,
-            onTap: () {
-              if (_state == DrawerState.open) {
-                toggle();
-              }
-            },
-          ),
+          child: widget.mainScreen,
         ),
       ],
-    );
-  }
-
-  Widget renderStyle2() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        double slide = rightSlide * _animationController.value;
-        double scale =
-            1 - (_animationController.value * widget.mainScreenScale);
-
-        double left = (1 - _animationController.value) * rightSlide;
-
-        return Stack(
-          children: [
-            Scaffold(
-              backgroundColor: Colors.blueAccent,
-              body: Transform.translate(
-                offset: Offset(0, 0),
-                child: widget.menuScreen,
-              ),
-            ),
-            Transform(
-              transform: Matrix4.identity()..translate(slide),
-              alignment: Alignment.center,
-              child: widget.mainScreen,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderStyle3() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        double slide = rightSlide * _animationController.value;
-        double left = (1 - _animationController.value) * rightSlide;
-
-        return Stack(
-          children: [
-            Transform(
-              transform: Matrix4.identity()..translate(slide),
-              alignment: Alignment.center,
-              child: widget.mainScreen,
-            ),
-            Transform.translate(
-              offset: Offset(-left, 0),
-              child: Container(
-                  color: Colors.blueAccent,
-                  width: rightSlide,
-                  child: widget.menuScreen),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderStyle4() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        // double slide = rightSlide * _animationController.value;
-        double left = (1 - _animationController.value) * rightSlide;
-
-        return Stack(
-          children: [
-            widget.mainScreen,
-            Transform.translate(
-              offset: Offset(-left, 0),
-              child: Container(
-                  color: Colors.blueAccent,
-                  width: rightSlide,
-                  child: widget.menuScreen),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderStyle5() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        double slide = rightSlide * _animationController.value;
-        double scale =
-            1 - (_animationController.value * widget.mainScreenScale);
-        double top = _animationController.value * 200;
-
-        return Stack(
-          children: [
-            Scaffold(
-              backgroundColor: Colors.blueAccent,
-              body: Transform.translate(
-                offset: Offset(0, 0),
-                child: widget.menuScreen,
-              ),
-            ),
-            Transform(
-              transform: Matrix4.identity()
-                ..translate(slide, top)
-                ..scale(scale),
-              alignment: Alignment.center,
-              child: widget.mainScreen,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderStyle6() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        double x = _animationController.value * (rightSlide / 2);
-        double rotate = _animationController.value * (pi / 4);
-        double scale =
-            1 - (_animationController.value * widget.mainScreenScale);
-        return Stack(
-          children: [
-            Scaffold(
-              backgroundColor: Colors.blueAccent,
-              body: Transform.translate(
-                offset: Offset(0, 0),
-                child: widget.menuScreen,
-              ),
-            ),
-            Transform(
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.0009)
-                ..translate(x)
-                ..scale(scale)
-                ..rotateY(rotate),
-              alignment: Alignment.centerRight,
-              child: widget.mainScreen,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderStyle7() {
-    final rightSlide = MediaQuery.of(context).size.width * 0.6;
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        double x = _animationController.value * (rightSlide / 2);
-        double scale =
-            1 - (_animationController.value * widget.mainScreenScale);
-        double rotate = _animationController.value * (pi / 4);
-        return Stack(
-          children: [
-            Scaffold(
-              backgroundColor: Colors.blueAccent,
-              body: Transform.translate(
-                offset: Offset(0, 0),
-                child: widget.menuScreen,
-              ),
-            ),
-            Transform(
-              transform: Matrix4.identity()
-                ..setEntry(3, 2, 0.0009)
-                ..translate(x)
-                ..scale(scale)
-                ..rotateY(-rotate),
-              alignment: Alignment.centerRight,
-              child: widget.mainScreen,
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget renderLayout() {
-    switch (widget.type) {
-      case 'style1':
-        return renderStyle1();
-        break;
-      case 'style2':
-        return renderStyle2();
-        break;
-      case 'style3':
-        return renderStyle3();
-        break;
-      case 'style4':
-        return renderStyle4();
-        break;
-      case 'style5':
-        return renderStyle5();
-        break;
-      case 'style6':
-        return renderStyle6();
-        break;
-      case 'style7':
-        return renderStyle7();
-        break;
-      default:
-        return renderDefault();
-        break;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      /// Detecting the slide amount to close the drawer in RTL & LTR
-      onPanUpdate: (details) {
-        if (_state == DrawerState.open && details.delta.dx < -6 && !_rtl ||
-            details.delta.dx < 6 && _rtl) {
-          toggle();
-        }
-      },
-      child: renderLayout(),
     );
   }
 }

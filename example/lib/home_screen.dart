@@ -29,14 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return ZoomDrawer(
       controller: _drawerController,
-      mainScreenScale: 0.35,
+      mainScreenScale: 0.3,
       menuScreen: MenuScreen(
         HomeScreen.mainMenu,
         callback: _updatePage,
         current: _currentPage,
       ),
       mainScreen: MainScreen(),
-      borderRadius: 24.0,
+      borderRadius: 30.0,
 //      showShadow: true,
       angle: 0.0,
       slideWidth:
