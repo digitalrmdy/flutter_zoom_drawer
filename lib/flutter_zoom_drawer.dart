@@ -29,7 +29,7 @@ class ZoomDrawer extends StatefulWidget {
     @required this.menuScreen,
     @required this.mainScreen,
     this.slideWidth = 275.0,
-    this.mainScreenScale = 0.3,
+    this.mainScreenScale = 0.2,
     this.borderRadius = 16.0,
     this.angle = -12.0,
     this.backgroundColor = Colors.white,
@@ -269,52 +269,51 @@ class _ZoomDrawerState extends State<ZoomDrawer>
     final slidePercent =
         ZoomDrawer.isRTL() ? MediaQuery.of(context).size.width * .1 : 15.0;
 
-    return Stack(
-      children: [
-        GestureDetector(
-          child: widget.menuScreen,
+    return GestureDetector(
+      /// Detecting the slide amount to close the drawer in RTL & LTR
+      onPanUpdate: (details) {
+        if (details.delta.dx < -6 && !_rtl || details.delta.dx < 6 && _rtl) {
+          toggle();
+        }
+      },
+      onTap: toggle,
+      child: Stack(
+        children: [
+          widget.menuScreen,
+          if (widget.showShadow) ...[
+            /// Displaying the first shadow
+            AnimatedBuilder(
+              animation: _animationController,
+              builder: (_, w) => _zoomAndSlideContent(w,
+                  angle: (widget.angle == 0.0) ? 0.0 : widget.angle - 8,
+                  scale: .9,
+                  slide: slidePercent * 2),
+              child: Container(
+                color: widget.backgroundColor.withAlpha(31),
+              ),
+            ),
 
-          /// Detecting the slide amount to close the drawer in RTL & LTR
-          onPanUpdate: (details) {
-            if (details.delta.dx < -6 && !_rtl ||
-                details.delta.dx < 6 && _rtl) {
-              toggle();
-            }
-          },
-        ),
-        if (widget.showShadow) ...[
-          /// Displaying the first shadow
+            /// Displaying the second shadow
+            AnimatedBuilder(
+              animation: _animationController,
+              builder: (_, w) => _zoomAndSlideContent(w,
+                  angle: (widget.angle == 0.0) ? 0.0 : widget.angle - 4.0,
+                  scale: .95,
+                  slide: slidePercent),
+              child: Container(
+                color: widget.backgroundColor,
+              ),
+            )
+          ],
+
+          /// Displaying the main screen
           AnimatedBuilder(
             animation: _animationController,
-            builder: (_, w) => _zoomAndSlideContent(w,
-                angle: (widget.angle == 0.0) ? 0.0 : widget.angle - 8,
-                scale: .9,
-                slide: slidePercent * 2),
-            child: Container(
-              color: widget.backgroundColor.withAlpha(31),
-            ),
+            builder: (_, w) => _zoomAndSlideContent(w),
+            child: widget.mainScreen,
           ),
-
-          /// Displaying the second shadow
-          AnimatedBuilder(
-            animation: _animationController,
-            builder: (_, w) => _zoomAndSlideContent(w,
-                angle: (widget.angle == 0.0) ? 0.0 : widget.angle - 4.0,
-                scale: .95,
-                slide: slidePercent),
-            child: Container(
-              color: widget.backgroundColor,
-            ),
-          )
         ],
-
-        /// Displaying the main screen
-        AnimatedBuilder(
-          animation: _animationController,
-          builder: (_, w) => _zoomAndSlideContent(w),
-          child: widget.mainScreen,
-        ),
-      ],
+      ),
     );
   }
 }

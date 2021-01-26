@@ -38,10 +38,7 @@ class PageStructure extends StatelessWidget {
             "${tr("current")}: ${HomeScreen.mainMenu[_currentPage].title}"),
       ),
     );
-    final color = Theme
-        .of(context)
-        .accentColor;
-    final style = TextStyle(color: color);
+    final color = Theme.of(context).accentColor;
 
     return PlatformScaffold(
       backgroundColor: Colors.transparent,
@@ -72,10 +69,7 @@ class PageStructure extends StatelessWidget {
         items: HomeScreen.mainMenu
             .map(
               (item) => BottomNavigationBarItem(
-                title: Text(
-                  item.title,
-                  style: style,
-                ),
+                label: item.title,
                 icon: Icon(
                   item.icon,
                   color: color,
